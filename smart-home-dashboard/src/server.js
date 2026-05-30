@@ -78,7 +78,42 @@ setInterval(() => {
   }
 }, 5000);
 
-app.listen(PORT, () => {
+// Create HTTP server and attach Socket.IO for interactive terminal
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require('socket.io');
+const io = new Server(server, { /* defaults */ });
+const pty = require('node-pty');
+
+io.on('connection', (socket) => {
+  // spawn a shell for each connected client
+  const shell = process.env.SHELL || (process.platform === 'win32' ? 'powershell.exe' : 'bash');
+  const term = pty.spawn(shell, [], {
+    name: 'xterm-color',
+    cols: 80,
+    rows: 24,
+    cwd: process.env.HOME,
+    env: process.env
+  });
+
+  term.on('data', (data) => {
+    socket.emit('output', data);
+  });
+
+  socket.on('input', (data) => {
+    term.write(data);
+  });
+
+  socket.on('resize', ({cols, rows}) => {
+    try{ term.resize(cols, rows); }catch(e){}
+  });
+
+  socket.on('disconnect', () => {
+    try{ term.kill(); }catch(e){}
+  });
+});
+
+server.listen(PORT, () => {
   console.log(`Smart Home Dashboard running on http://localhost:${PORT}`);
 });
 
