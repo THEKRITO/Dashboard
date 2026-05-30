@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Terminal - Smart Home</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <nav class="nav">
+      <div class="brand">Smart Home</div>
+      <a href="/">Main</a>
+      <a href="/terminal.html" class="active">Terminal</a>
+      <a href="/pages.html">Pages</a>
+    </nav>
+  </header>
+  <main>
+    <h2>Host Terminal (execute commands)</h2>
+    <div class="terminal-wrap">
+      <div id="out" class="term-output">Output will appear here.</div>
+      <div class="term-input">
+        <input id="cmd" placeholder="Enter command (e.g. ls -la)" />
+        <button id="run">Run</button>
+        <button id="clear">Clear</button>
+      </div>
+    </div>
+  </main>
+  <script>
+    const out = document.getElementById('out');
+    document.getElementById('run').onclick = async ()=>{
+      const cmd = document.getElementById('cmd').value.trim();
+      if(!cmd) return;
+      out.textContent += '\n$ ' + cmd + '\n';
+      try{
+        const res = await fetch('/api/exec', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cmd})});
+        const json = await res.json();
+        out.textContent += json.stdout || '';
+        out.textContent += json.stderr || '';
+        out.scrollTop = out.scrollHeight;
+      }catch(e){ out.textContent += '\nError: '+e.message }
+    };
+    document.getElementById('clear').onclick = ()=>{ out.textContent = '' };
+  </script>
+</body>
+</html>

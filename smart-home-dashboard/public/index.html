@@ -8,14 +8,36 @@
 </head>
 <body>
   <header>
-    <h1>Smart Home Dashboard</h1>
+    <nav class="nav">
+      <div class="brand">Smart Home</div>
+      <a href="/" class="active">Main</a>
+      <a href="/terminal.html">Terminal</a>
+      <a href="/pages.html">Pages</a>
+      <a href="https://github.com/THEKRITO/Dashboard" target="_blank">GitHub</a>
+    </nav>
   </header>
   <main>
     <section id="status">
       <h2>System Status</h2>
       <pre id="status-json">Loading…</pre>
     </section>
+    <section id="sensors">
+      <h2>Live Sensors</h2>
+      <div id="sensor-cards">
+        <div class="card"><strong>Temperature</strong><div id="temp">-- °C</div></div>
+        <div class="card"><strong>Humidity</strong><div id="hum">-- %</div></div>
+      </div>
+      <canvas id="sensor-chart" width="600" height="200"></canvas>
+    </section>
+
+    <section id="pages-list">
+      <h2>Pages</h2>
+      <p>Add your own pages to the `public/` folder and link them here. Example pages:
+      <ul><li><a href="/example-page.html">Example Page</a></li></ul></p>
+    </section>
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="/app.js"></script>
+  <script src="/dashboard.js"></script>
 </body>
 </html>
