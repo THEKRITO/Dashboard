@@ -9,16 +9,15 @@
 <body>
   <header>
     <nav class="nav">
-      <div class="brand">Smart Home</div>
-      <a href="/">Main</a>
+      <a href="/" class="brand">Smart Home</a>
       <a href="/terminal.html" class="active">Terminal</a>
       <a href="/pages.html">Pages</a>
     </nav>
   </header>
-  <main>
+  <main class="terminal-container">
     <h2>Host Terminal (interactive)</h2>
     <div class="terminal-wrap">
-      <div id="terminal" class="term-output" style="height:520px;"></div>
+      <div id="terminal" class="term-output"></div>
     </div>
   </main>
   <!-- xterm.js and socket.io client -->
@@ -31,11 +30,22 @@
     const { Terminal } = window;
     // Fix for xterm-addon-fit CDN import
     const FitAddon = window.FitAddon.FitAddon;
-    const term = new Terminal({cursorBlink: true});
+    const term = new Terminal({
+      cursorBlink: true,
+      theme: {
+        background: '#000000',
+        foreground: '#00ff99'
+      }
+    });
     const fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
     term.open(document.getElementById('terminal'));
-    fitAddon.fit();
+    
+    // Initial fit with delay to ensure container is ready
+    setTimeout(() => {
+        fitAddon.fit();
+        socket.emit('resize', { cols: term.cols, rows: term.rows });
+    }, 100);
 
     socket.on('output', data => { term.write(data); });
 
@@ -46,9 +56,6 @@
       fitAddon.fit();
       socket.emit('resize', { cols: term.cols, rows: term.rows });
     });
-
-    // initial resize
-    socket.emit('resize', { cols: term.cols, rows: term.rows });
   </script>
 </body>
 </html>

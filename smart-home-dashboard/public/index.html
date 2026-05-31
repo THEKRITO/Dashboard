@@ -9,18 +9,13 @@
 <body>
   <header>
     <nav class="nav">
-      <div class="brand">Smart Home</div>
-      <a href="/" class="active">Main</a>
+      <a href="/" class="brand">Smart Home</a>
       <a href="/terminal.html">Terminal</a>
       <a href="/pages.html">Pages</a>
       <a href="https://github.com/THEKRITO/Dashboard" target="_blank">GitHub</a>
     </nav>
   </header>
   <main>
-    <section id="status">
-      <h2>System Status</h2>
-      <pre id="status-json">Loading…</pre>
-    </section>
     <section id="sensors">
       <h2>Live Sensors</h2>
       <div id="sensor-cards">
@@ -29,7 +24,6 @@
       </div>
       <canvas id="sensor-chart" width="600" height="200"></canvas>
     </section>
-
   </main>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/date-fns"></script>
