@@ -18,11 +18,7 @@ Deploy notes:
 Security note about the terminal:
 - This project includes a simple web-accessible terminal (`/terminal.html`) which posts commands to `/api/exec` and runs them on the host. That endpoint allows arbitrary shell execution and is intended only for trusted, private networks. Do NOT expose this service to the public internet without adding authentication and proper access controls.
 
-Git:
-
-1. `git init`
-2. `git add .`  
-3. `git commit -m "Initial dashboard"`
-4. Create a GitHub repo and push following instructions.
-
-"HELLO"
+- Login page:
+    Necessary to access the terminal of your computer;
+    To access you need to create a DB usable via MySQL/MariaDB and install "npm install mysql2";
+    

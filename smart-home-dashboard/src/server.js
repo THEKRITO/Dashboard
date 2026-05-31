@@ -7,9 +7,13 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
 const bcrypt = require('bcryptjs');
+const { pool, initDB } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize Database
+initDB();
 
 // Authentication Middleware
 app.use(session({
@@ -26,12 +30,16 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
 // Local Strategy
-passport.use(new LocalStrategy((username, password, done) => {
-  if (username !== process.env.LOCAL_USERNAME) return done(null, false, { message: 'Invalid username' });
-  bcrypt.compare(password, process.env.LOCAL_PASSWORD_HASH, (err, res) => {
-    if (res) return done(null, { username, method: 'local' });
-    return done(null, false, { message: 'Invalid password' });
-  });
+passport.use(new LocalStrategy(async (username, password, done) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM users WHERE username = ? AND provider = "local"', [username]);
+    if (rows.length === 0) return done(null, false, { message: 'Invalid username' });
+    const user = rows[0];
+    bcrypt.compare(password, user.password_hash, (err, res) => {
+      if (res) return done(null, { id: user.id, username: user.username, method: 'local' });
+      return done(null, false, { message: 'Invalid password' });
+    });
+  } catch (err) { return done(err); }
 }));
 
 // GitHub Strategy
@@ -40,12 +48,14 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_ID !== 'your_id_he
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
     callbackURL: `http://localhost:${PORT}/auth/github/callback`
-  }, (accessToken, refreshToken, profile, done) => {
-    const allowedUsers = (process.env.GITHUB_ALLOWED_USERS || '').split(',').map(u => u.trim());
-    if (allowedUsers.includes(profile.username)) {
-      return done(null, { username: profile.username, method: 'github' });
-    }
-    return done(null, false, { message: 'GitHub user not authorized' });
+  }, async (accessToken, refreshToken, profile, done) => {
+    try {
+      const [rows] = await pool.query('SELECT * FROM users WHERE username = ? AND provider = "github"', [profile.username]);
+      if (rows.length > 0) {
+        return done(null, { id: rows[0].id, username: rows[0].username, method: 'github' });
+      }
+      return done(null, false, { message: 'GitHub user not authorized in database' });
+    } catch (err) { return done(err); }
   }));
 }
 
@@ -153,6 +163,15 @@ app.get('/api/sensors', (req, res) => {
   sampleSensors(sensor => res.json(sensor));
 });
 
+app.get('/api/sensors/history', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM sensor_logs ORDER BY timestamp DESC LIMIT 100');
+    res.json(rows.reverse()); // Reverse to get chronological order for chart
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch sensor history' });
+  }
+});
+
 // Execute shell commands (CAUTION: exposes shell access). Only use on trusted networks.
 const { exec } = require('child_process');
 app.post('/api/exec', ensureAuthenticated, (req, res) => {
@@ -183,9 +202,16 @@ app.get('/api/stream', (req, res) => {
   });
 });
 
-// Periodically broadcast sensor data to SSE clients
+// Periodically broadcast and log sensor data
 setInterval(() => {
-  sampleSensors((data) => {
+  sampleSensors(async (data) => {
+    // Log to DB
+    try {
+      await pool.query('INSERT INTO sensor_logs (outside_temp, cpu_temp) VALUES (?, ?)', [data.outside, data.cpu]);
+    } catch (err) {
+      console.error('Failed to log sensors to DB:', err);
+    }
+
     const payload = `data: ${JSON.stringify(data)}\n\n`;
     for(const client of sseClients){
       try { 

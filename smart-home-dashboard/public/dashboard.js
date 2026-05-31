@@ -34,25 +34,45 @@ async function fetchStatus(){
 
 
 
-// initial sensor fetch
-function updateSensors(s) {
-  console.log('Received sensor data:', s);
-  tempOutEl.textContent = (s.outside !== null ? s.outside.toFixed(1) + ' °C' : 'N/A');
-  tempCpuEl.textContent = (s.cpu !== null ? s.cpu.toFixed(1) + ' °C' : 'N/A');
-  pushSample(s);
+// Load history on start
+async function loadHistory() {
+  try {
+    const res = await fetch('/api/sensors/history');
+    const history = await res.json();
+    history.forEach(sample => {
+      const t = new Date(sample.timestamp);
+      data.labels.push(t);
+      data.datasets[0].data.push({ x: t, y: sample.outside_temp });
+      data.datasets[1].data.push({ x: t, y: sample.cpu_temp });
+    });
+    // Keep last 100 points
+    if (data.labels.length > 100) {
+      const toRemove = data.labels.length - 100;
+      data.labels.splice(0, toRemove);
+      data.datasets.forEach(ds => ds.data.splice(0, toRemove));
+    }
+    chart.update();
+    
+    // Update labels with the latest data
+    if (history.length > 0) {
+      const last = history[history.length - 1];
+      tempOutEl.textContent = (last.outside_temp !== null ? last.outside_temp.toFixed(1) + ' °C' : 'N/A');
+      tempCpuEl.textContent = (last.cpu_temp !== null ? last.cpu_temp.toFixed(1) + ' °C' : 'N/A');
+    }
+  } catch (err) {
+    console.error('Failed to load history:', err);
+  }
 }
 
-console.log('Fetching initial sensors...');
-fetch('/api/sensors').then(r=>r.json()).then(data => {
-  console.log('Initial sensor fetch successful');
-  updateSensors(data);
-}).catch(err => {
-  console.error('Initial sensor fetch failed:', err);
-});
+loadHistory();
 
 // Poll every 30s for new data
 setInterval(() => {
-  fetch('/api/sensors').then(r=>r.json()).then(updateSensors);
+  fetch('/api/sensors').then(r=>r.json()).then(s => {
+    tempOutEl.textContent = (s.outside !== null ? s.outside.toFixed(1) + ' °C' : 'N/A');
+    tempCpuEl.textContent = (s.cpu !== null ? s.cpu.toFixed(1) + ' °C' : 'N/A');
+    pushSample(s);
+  });
 }, 30000);
 
 // periodic status refresh
