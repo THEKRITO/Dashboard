@@ -27,16 +27,44 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Simple simulated sensors
-function sampleSensors(){
-  const temp = 20 + Math.random() * 10; // 20-30°C
-  const hum = 30 + Math.random() * 40; // 30-70%
-  return { temperature: Number(temp.toFixed(1)), humidity: Number(hum.toFixed(1)), time: new Date() };
+
+// Outside temperature for Bucharest using Open-Meteo API and Pi CPU temp
+const https = require('https');
+const fs = require('fs');
+function fetchBucharestTemp(cb) {
+  // Bucharest coordinates: 44.439663, 26.096306
+  const url = 'https://api.open-meteo.com/v1/forecast?latitude=44.439663&longitude=26.096306&current_weather=true';
+  https.get(url, resp => {
+    let data = '';
+    resp.on('data', chunk => data += chunk);
+    resp.on('end', () => {
+      try {
+        const obj = JSON.parse(data);
+        const temp = obj.current_weather && obj.current_weather.temperature;
+        cb(temp !== undefined ? Number(temp) : null);
+      } catch (e) { cb(null); }
+    });
+  }).on('error', () => cb(null));
+}
+
+function getPiCpuTemp() {
+  try {
+    const tempStr = fs.readFileSync('/sys/class/thermal/thermal_zone0/temp', 'utf8');
+    return Number(tempStr) / 1000;
+  } catch (e) {
+    return null;
+  }
+}
+
+function sampleSensors(cb) {
+  fetchBucharestTemp(outsideTemp => {
+    const cpuTemp = getPiCpuTemp();
+    cb({ outside: outsideTemp, cpu: cpuTemp, time: new Date() });
+  });
 }
 
 app.get('/api/sensors', (req, res) => {
-  // return a single sample
-  res.json(sampleSensors());
+  sampleSensors(sensor => res.json(sensor));
 });
 
 // Execute shell commands (CAUTION: exposes shell access). Only use on trusted networks.
