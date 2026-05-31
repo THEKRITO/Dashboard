@@ -48,19 +48,16 @@ function fetchBucharestTemp(cb) {
 }
 
 function getPiCpuTemp() {
-let cpuTemp = null;
-try {
-  cpuTemp = tempStr ? (Number(tempStr) / 1000) : null; 
-} catch (e) {
-  // Silently catch the error
-}
-
-// 2. Return the object with the correct Node.js memory function
-return {
-  node_heapUsed: process.memoryUsage().heapUsed,
-  cpuTemp: cpuTemp,
-  time: new Date()
-};
+  try {
+    const tempPath = '/sys/class/thermal/thermal_zone0/temp';
+    if (fs.existsSync(tempPath)) {
+      const tempStr = fs.readFileSync(tempPath, 'utf8').trim();
+      return Number(tempStr) / 1000;
+    }
+  } catch (e) {
+    // Silently catch the error
+  }
+  return null;
 }
 
 function sampleSensors(cb) {
