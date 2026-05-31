@@ -15,6 +15,10 @@ const PORT = process.env.PORT || 3000;
 // Initialize Database
 initDB();
 
+// Body parsing
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: false }));
+
 // Single session configuration
 const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || 'fallback_secret',
@@ -41,15 +45,26 @@ passport.deserializeUser((user, done) => {
 
 // Local Strategy
 passport.use(new LocalStrategy(async (username, password, done) => {
+  console.log(`Login attempt for user: ${username}`);
   try {
     const [rows] = await pool.query('SELECT * FROM users WHERE username = ? AND provider = "local"', [username]);
-    if (rows.length === 0) return done(null, false, { message: 'Invalid username' });
+    if (rows.length === 0) {
+      console.log('User not found in database');
+      return done(null, false, { message: 'Invalid username' });
+    }
     const user = rows[0];
     bcrypt.compare(password, user.password_hash, (err, res) => {
-      if (res) return done(null, { id: user.id, username: user.username, method: 'local' });
+      if (res) {
+        console.log('Login successful');
+        return done(null, { id: user.id, username: user.username, method: 'local' });
+      }
+      console.log('Invalid password provided');
       return done(null, false, { message: 'Invalid password' });
     });
-  } catch (err) { return done(err); }
+  } catch (err) { 
+    console.error('Database error during login:', err);
+    return done(err); 
+  }
 }));
 
 // GitHub Strategy
@@ -95,7 +110,6 @@ app.get('/auth/logout', (req, res) => {
 app.get('/terminal.html', ensureAuthenticated);
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
-app.use(express.json({ limit: '1mb' }));
 
 app.get('/api/status', (req, res) => {
   const mem = process.memoryUsage();
