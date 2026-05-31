@@ -31,6 +31,11 @@ body{
     width: 100%;
 }
 
+body.no-scroll {
+    overflow-y: hidden;
+    height: 100vh;
+}
+
 header{
     background:rgba(0,0,0,0.2);
     padding:10px 20px;
@@ -118,11 +123,12 @@ canvas {
 /* Terminal page */
 .terminal-container {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     flex-direction: column;
     width: 100%;
     padding: 20px;
+    height: calc(100vh - 80px); /* Adjust for header height approx */
 }
 
 .terminal-wrap {
@@ -131,6 +137,7 @@ canvas {
     gap: 12px;
     width: 100%;
     max-width: 1000px;
+    flex-grow: 1;
 }
 
 .term-output {
@@ -138,7 +145,7 @@ canvas {
     color: #00ff99;
     padding: 10px;
     border-radius: 8px;
-    height: 500px;
+    flex-grow: 1;
     width: 100%;
     overflow: hidden; /* xterm handles scroll */
     font-family: 'Cascadia Code', 'Courier New', monospace;
@@ -164,6 +171,6 @@ canvas {
     .card strong { font-size: 11px; }
     .card div { font-size: 18px; }
     
-    .terminal-container { padding: 10px; }
-    .term-output { height: 350px; }
+    .terminal-container { padding: 10px; height: calc(100vh - 120px); }
+    .term-output { flex-grow: 1; }
 }
