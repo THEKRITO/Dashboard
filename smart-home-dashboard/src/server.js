@@ -48,12 +48,20 @@ function fetchBucharestTemp(cb) {
 }
 
 function getPiCpuTemp() {
-  try {
-    const tempStr = fs.readFileSync('/sys/class/thermal/thermal_zone0/temp', 'utf8');
-    return Number(tempStr) / 1000;
-  } catch (e) {
-    return null;
-  }
+  let cpuTemp = null;
+try {
+  // Adding the missing '?' for a proper ternary check (assuming you are checking if tempStr exists)
+  cpuTemp = tempStr ? (Number(tempStr) / 1000) : null; 
+} catch (e) {
+  // Silently catch the error, or log it if needed
+}
+
+// 2. Return or assign your properly formatted object
+return {
+  node_heapUsed: mem.heapUsed,
+  cpuTemp: cpuTemp,
+  time: new Date()
+};
 }
 
 function sampleSensors(cb) {
