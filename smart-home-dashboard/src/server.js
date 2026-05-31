@@ -99,11 +99,16 @@ app.get('/api/stream', (req, res) => {
 
 // Periodically broadcast sensor data to SSE clients
 setInterval(() => {
-  const data = sampleSensors();
-  const payload = `data: ${JSON.stringify(data)}\n\n`;
-  for(const client of sseClients){
-    try{ client.write(payload); }catch(e){ sseClients.delete(client); }
-  }
+  sampleSensors((data) => {
+    const payload = `data: ${JSON.stringify(data)}\n\n`;
+    for(const client of sseClients){
+      try { 
+        client.write(payload); 
+      } catch(e) { 
+        sseClients.delete(client); 
+      }
+    }
+  });
 }, 5000);
 
 // Create HTTP server and attach Socket.IO for interactive terminal
