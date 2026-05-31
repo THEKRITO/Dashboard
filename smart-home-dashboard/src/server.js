@@ -1,9 +1,78 @@
+require('dotenv').config();
 const express = require('express');
 const os = require('os');
 const path = require('path');
+const session = require('express-session');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const GitHubStrategy = require('passport-github2').Strategy;
+const bcrypt = require('bcryptjs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Authentication Middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'fallback_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false } // Set to true if using HTTPS
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Passport configuration
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((user, done) => done(null, user));
+
+// Local Strategy
+passport.use(new LocalStrategy((username, password, done) => {
+  if (username !== process.env.LOCAL_USERNAME) return done(null, false, { message: 'Invalid username' });
+  bcrypt.compare(password, process.env.LOCAL_PASSWORD_HASH, (err, res) => {
+    if (res) return done(null, { username, method: 'local' });
+    return done(null, false, { message: 'Invalid password' });
+  });
+}));
+
+// GitHub Strategy
+if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_ID !== 'your_id_here') {
+  passport.use(new GitHubStrategy({
+    clientID: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    callbackURL: `http://localhost:${PORT}/auth/github/callback`
+  }, (accessToken, refreshToken, profile, done) => {
+    const allowedUsers = (process.env.GITHUB_ALLOWED_USERS || '').split(',').map(u => u.trim());
+    if (allowedUsers.includes(profile.username)) {
+      return done(null, { username: profile.username, method: 'github' });
+    }
+    return done(null, false, { message: 'GitHub user not authorized' });
+  }));
+}
+
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) return next();
+  res.redirect('/login.html');
+}
+
+// Auth Routes
+app.post('/auth/login', passport.authenticate('local', {
+  successRedirect: '/terminal.html',
+  failureRedirect: '/login.html'
+}));
+
+app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
+
+app.get('/auth/github/callback', 
+  passport.authenticate('github', { failureRedirect: '/login.html' }),
+  (req, res) => res.redirect('/terminal.html')
+);
+
+app.get('/auth/logout', (req, res) => {
+  req.logout(() => res.redirect('/'));
+});
+
+// Protect terminal.html specifically before static server
+app.get('/terminal.html', ensureAuthenticated);
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use(express.json({ limit: '1mb' }));
@@ -86,7 +155,7 @@ app.get('/api/sensors', (req, res) => {
 
 // Execute shell commands (CAUTION: exposes shell access). Only use on trusted networks.
 const { exec } = require('child_process');
-app.post('/api/exec', (req, res) => {
+app.post('/api/exec', ensureAuthenticated, (req, res) => {
   const { cmd } = req.body || {};
   if(!cmd || typeof cmd !== 'string') return res.status(400).json({ error: 'cmd required' });
   // Run command with timeout and limited buffer
@@ -132,10 +201,28 @@ setInterval(() => {
 const http = require('http');
 const server = http.createServer(app);
 const { Server } = require('socket.io');
-const io = new Server(server, { /* defaults */ });
+const io = new Server(server);
 const pty = require('node-pty');
 
+// Middleware to share session with socket.io
+const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
+io.use(wrap(session({
+  secret: process.env.SESSION_SECRET || 'fallback_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false }
+})));
+io.use(wrap(passport.initialize()));
+io.use(wrap(passport.session()));
+
 io.on('connection', (socket) => {
+  // Check if authenticated
+  if (!socket.request.isAuthenticated || !socket.request.isAuthenticated()) {
+    console.log('Unauthenticated socket connection rejected');
+    socket.disconnect(true);
+    return;
+  }
+
   // spawn a shell for each connected client
   const shell = process.env.SHELL || (process.platform === 'win32' ? 'powershell.exe' : 'bash');
   const term = pty.spawn(shell, [], {

@@ -11,9 +11,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "socket.io": "^4.7.2",
-    "node-pty": "^1.0.1"
+    "express-session": "^1.19.0",
+    "node-pty": "^1.0.1",
+    "passport": "^0.7.0",
+    "passport-github2": "^0.1.12",
+    "passport-local": "^1.0.0",
+    "socket.io": "^4.7.2"
   },
   "type": "commonjs"
 }

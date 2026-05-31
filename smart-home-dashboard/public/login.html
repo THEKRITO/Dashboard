@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#4d1478" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Login - Smart Home</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="no-scroll">
+  <header>
+    <nav class="nav">
+      <a href="/" class="brand">Smart Home</a>
+    </nav>
+  </header>
+  <main class="terminal-container">
+    <h2>Secure Access</h2>
+    <div class="terminal-wrap" style="background: var(--card-bg); padding: 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+      <form action="/auth/login" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <label>Username</label>
+          <input type="text" name="username" required style="padding: 10px; border-radius: 6px; border: none; background: rgba(0,0,0,0.3); color: white;">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <label>Password</label>
+          <input type="password" name="password" required style="padding: 10px; border-radius: 6px; border: none; background: rgba(0,0,0,0.3); color: white;">
+        </div>
+        <button type="submit" style="padding: 12px; border-radius: 6px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; margin-top: 10px;">Login with Local Account</button>
+      </form>
+      
+      <div style="margin: 20px 0; text-align: center; opacity: 0.5;">OR</div>
+      
+      <a href="/auth/github" style="display: block; text-align: center; padding: 12px; border-radius: 6px; border: 1px solid white; color: white; text-decoration: none; font-weight: bold;">
+        Login with GitHub
+      </a>
+    </div>
+  </main>
+</body>
+</html>
