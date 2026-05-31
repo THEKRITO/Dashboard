@@ -23,17 +23,17 @@ h1{margin:0;font-size:20px}
 #sensor-cards{display:flex;gap:12px;margin-bottom:12px}
 
 /* Terminal page */
-.terminal-wrap{
-    display: flex;
-    flex-direction: column;
+.terminal-wrap {
+    display: grid;
+    place-items: center;
     gap: 8px;
     max-width: 100%;
     overflow-x: hidden;
 }
-.term-output{
+.term-output {
     background: linear-gradient(180deg,#0e0216,#220433);
     color: #00ff99;
-    padding: 12px;
+    padding: 0;
     border-radius: 8px;
     height: 320px;
     overflow-x: auto;
@@ -44,6 +44,9 @@ h1{margin:0;font-size:20px}
     max-width: 100%;
     width: 100%;
     box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .term-input{display:flex;gap:8px}
 .term-input input{flex:1;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.03);color:var(--text)}
