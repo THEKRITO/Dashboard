@@ -36,12 +36,19 @@ async function fetchStatus(){
 
 // initial sensor fetch
 function updateSensors(s) {
-  tempOutEl.textContent = (s.outside !== null ? s.outside + ' °C' : 'N/A');
-  tempCpuEl.textContent = (s.cpu !== null ? s.cpu + ' °C' : 'N/A');
+  console.log('Received sensor data:', s);
+  tempOutEl.textContent = (s.outside !== null ? s.outside.toFixed(1) + ' °C' : 'N/A');
+  tempCpuEl.textContent = (s.cpu !== null ? s.cpu.toFixed(1) + ' °C' : 'N/A');
   pushSample(s);
 }
 
-fetch('/api/sensors').then(r=>r.json()).then(updateSensors).catch(()=>{});
+console.log('Fetching initial sensors...');
+fetch('/api/sensors').then(r=>r.json()).then(data => {
+  console.log('Initial sensor fetch successful');
+  updateSensors(data);
+}).catch(err => {
+  console.error('Initial sensor fetch failed:', err);
+});
 
 // Poll every 30s for new data
 setInterval(() => {

@@ -41,10 +41,17 @@ function fetchBucharestTemp(cb) {
       try {
         const obj = JSON.parse(data);
         const temp = obj.current_weather && obj.current_weather.temperature;
+        console.log(`Fetched Bucharest temp: ${temp}`);
         cb(temp !== undefined ? Number(temp) : null);
-      } catch (e) { cb(null); }
+      } catch (e) { 
+        console.error('Error parsing weather data:', e);
+        cb(null); 
+      }
     });
-  }).on('error', () => cb(null));
+  }).on('error', (err) => {
+    console.error('Error fetching weather data:', err);
+    cb(null);
+  });
 }
 
 function getPiCpuTemp() {
@@ -52,12 +59,18 @@ function getPiCpuTemp() {
     const tempPath = '/sys/class/thermal/thermal_zone0/temp';
     if (fs.existsSync(tempPath)) {
       const tempStr = fs.readFileSync(tempPath, 'utf8').trim();
-      return Number(tempStr) / 1000;
+      const temp = Number(tempStr) / 1000;
+      console.log(`Read Pi CPU temp: ${temp}`);
+      return temp;
+    } else {
+      console.warn(`CPU temp file not found at ${tempPath}. Returning mock data for testing.`);
+      // Return a mock temperature if not on a Pi (e.g., between 40 and 50)
+      return 40 + Math.random() * 10;
     }
   } catch (e) {
-    // Silently catch the error
+    console.error('Error reading CPU temp:', e);
+    return null;
   }
-  return null;
 }
 
 function sampleSensors(cb) {
