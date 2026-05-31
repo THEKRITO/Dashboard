@@ -24,11 +24,13 @@ body{
     margin:0;
     padding: 0;
     min-height:100vh;
-    background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom));
+    background:linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+    background-attachment: fixed;
     color:var(--text);
     backdrop-filter:blur(4px);
     overflow-x: hidden; /* Prevent horizontal scroll on body */
     width: 100%;
+    overscroll-behavior: none; /* Immersive feel, no bounce */
 }
 
 body.no-scroll {
@@ -38,7 +40,8 @@ body.no-scroll {
 
 header{
     background:rgba(0,0,0,0.2);
-    padding:10px 20px;
+    padding: 10px 20px;
+    padding-top: max(10px, env(safe-area-inset-top));
     border-bottom:1px solid rgba(255,255,255,0.05);
     width: 100%;
 }
@@ -75,9 +78,32 @@ header{
 
 main{
     padding:18px;
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
     max-width: 1100px;
     margin: 0 auto;
     width: 100%;
+}
+
+/* Ambient Bars for Mobile Immersion */
+@media (max-width: 768px) {
+    body::before, body::after {
+        content: "";
+        position: fixed;
+        left: 0;
+        width: 100%;
+        z-index: 2000;
+        pointer-events: none;
+    }
+    body::before {
+        top: 0;
+        height: env(safe-area-inset-top);
+        background: var(--bg-top);
+    }
+    body::after {
+        bottom: 0;
+        height: env(safe-area-inset-bottom);
+        background: var(--bg-bottom);
+    }
 }
 
 /* Sensors area */
