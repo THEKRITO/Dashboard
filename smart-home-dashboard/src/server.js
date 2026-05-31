@@ -15,19 +15,29 @@ const PORT = process.env.PORT || 3000;
 // Initialize Database
 initDB();
 
-// Authentication Middleware
-app.use(session({
+// Single session configuration
+const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || 'fallback_secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // Set to true if using HTTPS
-}));
+  cookie: { 
+    secure: false,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+});
+
+// Authentication Middleware
+app.use(sessionMiddleware);
 app.use(passport.initialize());
 app.use(passport.session());
 
 // Passport configuration
-passport.serializeUser((user, done) => done(null, user));
-passport.deserializeUser((user, done) => done(null, user));
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
 
 // Local Strategy
 passport.use(new LocalStrategy(async (username, password, done) => {
@@ -232,12 +242,7 @@ const pty = require('node-pty');
 
 // Middleware to share session with socket.io
 const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
-io.use(wrap(session({
-  secret: process.env.SESSION_SECRET || 'fallback_secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: false }
-})));
+io.use(wrap(sessionMiddleware));
 io.use(wrap(passport.initialize()));
 io.use(wrap(passport.session()));
 
