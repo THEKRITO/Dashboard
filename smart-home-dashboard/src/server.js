@@ -48,17 +48,16 @@ function fetchBucharestTemp(cb) {
 }
 
 function getPiCpuTemp() {
-  let cpuTemp = null;
+let cpuTemp = null;
 try {
-  // Adding the missing '?' for a proper ternary check (assuming you are checking if tempStr exists)
   cpuTemp = tempStr ? (Number(tempStr) / 1000) : null; 
 } catch (e) {
-  // Silently catch the error, or log it if needed
+  // Silently catch the error
 }
 
-// 2. Return or assign your properly formatted object
+// 2. Return the object with the correct Node.js memory function
 return {
-  node_heapUsed: mem.heapUsed,
+  node_heapUsed: process.memoryUsage().heapUsed,
   cpuTemp: cpuTemp,
   time: new Date()
 };
